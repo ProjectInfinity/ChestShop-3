@@ -12,10 +12,7 @@ import com.Acrobot.ChestShop.Security;
 import com.Acrobot.ChestShop.Signs.ChestShopSign;
 import com.Acrobot.ChestShop.Utils.uBlock;
 import com.Acrobot.ChestShop.Utils.uName;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
@@ -27,6 +24,8 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+
+import java.util.HashMap;
 
 import static com.Acrobot.Breeze.Utils.BlockUtil.isChest;
 import static com.Acrobot.Breeze.Utils.BlockUtil.isSign;
@@ -41,6 +40,8 @@ import static org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK;
  * @author Acrobot
  */
 public class PlayerInteract implements Listener {
+    private static final HashMap<String, Long> timeOfTheLatestSignClick = new HashMap<String, Long>();
+    public static int interval = Properties.SHOP_INTERACTION_INTERVAL;//Minimal interval between transactions
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public static void onInteract(PlayerInteractEvent event) {
@@ -76,6 +77,11 @@ public class PlayerInteract implements Listener {
             return;
         }
 
+        if (!enoughTimeHasPassed(player.getName())){
+            player.sendMessage(ChatColor.RED + "Please wait before using a shop sign again.");
+            return;
+        }
+
         if (ChestShopSign.canAccess(player, sign)) {
             if (!Properties.ALLOW_SIGN_CHEST_OPEN || player.isSneaking() || player.getGameMode() == GameMode.CREATIVE) {
                 return;
@@ -88,6 +94,7 @@ public class PlayerInteract implements Listener {
 
             return;
         }
+        timeOfTheLatestSignClick.put(player.getName(), System.currentTimeMillis());
 
         if (action == RIGHT_CLICK_BLOCK) {
             event.setCancelled(true);
@@ -176,6 +183,10 @@ public class PlayerInteract implements Listener {
 
     public static boolean canOpenOtherShops(Player player) {
         return Permission.has(player, Permission.ADMIN) || Permission.has(player, Permission.MOD);
+    }
+
+    private static boolean enoughTimeHasPassed(String player) {
+        return !timeOfTheLatestSignClick.containsKey(player) || (System.currentTimeMillis() - timeOfTheLatestSignClick.get(player)) >= interval;
     }
 
     private static void showChestGUI(Player player, Block signBlock) {
