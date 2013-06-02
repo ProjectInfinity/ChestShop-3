@@ -86,7 +86,7 @@ public class ChestShop extends JavaPlugin {
 
         Methods.setPreferred(Properties.PREFERRED_ECONOMY_PLUGIN);
 
-        Dependencies.loadPlugins();
+        Dependencies.load();
 
         registerEvents();
 
